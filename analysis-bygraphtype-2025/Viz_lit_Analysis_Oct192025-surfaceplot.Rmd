@@ -1,7 +1,7 @@
 ---
 title: "Visualization Literacy Analysis"
 author: "Derek Harter, Shulan Lu"
-date: "10/19/2022"
+date: "10/19/2025"
 output: pdf_document
 editor_options: 
   chunk_output_type: console
@@ -32,7 +32,7 @@ dir.create(file.path(getwd(),"/plots"), showWarnings = F)
 #get unique values of these
 # this is list of subject ids
 
-raw_file_names <- list.files("AccData")
+raw_file_names <- list.files("../AccData")
 first_six <- substr(raw_file_names, 1, 6)
 sub_ids <- unique(first_six)
 
@@ -51,12 +51,12 @@ for (i in 1:length(sub_ids)){
     next
   }
   
-  temp_file1 <- read_xlsx(paste0("AccData/", sub_ids[i], "_1.xlsx")) %>%
+  temp_file1 <- read_xlsx(paste0("../AccData/", sub_ids[i], "_1.xlsx")) %>%
     slice(1:17) %>%
     select(-starts_with("Order")) %>%
     rename(correct = 8)
   
-  temp_file2 <- read_xlsx(paste0("AccData/", sub_ids[i], "_2.xlsx")) %>%
+  temp_file2 <- read_xlsx(paste0("../AccData/", sub_ids[i], "_2.xlsx")) %>%
     slice(1:17) %>%
      select(-starts_with("Order")) %>%
     rename(correct = 8)
@@ -76,7 +76,7 @@ all_data <- all_data %>%
   rename(readRT = TimeToReadQuestion, totalRT = TimeToBeginInput)
 
 #read in trialtype key (I created this from an early version of the previous paper)
-trial_type_key <- read.csv("trial_type_key.csv", stringsAsFactors = F)
+trial_type_key <- read.csv("../trial_type_key.csv", stringsAsFactors = F)
 
 all_data <- all_data %>%
   mutate(TrialType = trial_type_key$TrialType[match(TrialName, trial_type_key$TrialName)]) %>%
@@ -144,7 +144,7 @@ trials for the following analysis.
 
 ```{r}
 all_data_no_outliers <- all_data_no_outliers %>%
-  filter(grepl("BarChartQ[0-9]", TrialName))
+  filter(grepl("SurfacePlotQ[0-9]", TrialName))
 
 all_data_no_outliers %>%
   group_by(ParticipantId) %>%
