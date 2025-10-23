@@ -1,123 +1,123 @@
 "ParticipantId","Condition","Type1","Type2","Type3"
-"AA0176","VR Monitor",0.5,0.5,1
-"AA0876","VR",0,0.5,0
-"AA1078","VR Monitor Stereo",1,0.5,0
-"AA1358","VR Monitor",0.25,0.5,1
-"AA3083","VR Monitor",1,0.5,1
-"AA4432","VR Monitor",0.5,1,0.75
-"AA6335","VR Monitor",1,0.5,1
-"AA7062","VR",1,0,0
+"AA0176","VR Monitor",1,1,1
+"AA0876","VR",1,1,1
+"AA1078","VR Monitor Stereo",1,1,1
+"AA1358","VR Monitor",1,1,1
+"AA3083","VR Monitor",1,1,1
+"AA4432","VR Monitor",1,1,1
+"AA6335","VR Monitor",1,1,1
+"AA7062","VR",1,1,0.75
 "AA7736","VR Monitor Stereo",1,1,1
-"AA9060","VR",0.5,0,0.25
-"AA9143","VR Monitor",1,0.5,0
-"AC8975","VR Monitor",1,0.5,1
-"AC9337","VR Monitor Stereo",0.5,1,1
-"AE1290","VR Monitor Stereo",1,0.75,0.25
-"AE2314","VR Monitor Stereo",1,0.5,0
-"AE2423","VR Monitor Stereo",0.5,0,0.25
-"AE2567","VR Monitor",0.5,0.5,0
-"AE4411","VR",0.5,0.5,0
-"AE7022","VR",1,0.5,0.25
-"AE7577","VR Monitor Stereo",1,0,0.25
-"AE8118","VR",1,0.5,1
-"AH8153","VR",0.5,1,1
-"AI9736","VR Monitor Stereo",0,0.5,0
-"AL7521","VR Monitor Stereo",1,0,0
-"AM6705","VR",0.5,0.5,1
-"AN7725","VR",0.5,0.5,0
-"AO0649","VR",1,0.5,0.5
-"AO1417","VR",1,0,0.75
-"AO5595","VR",1,0.5,1
-"AO7880","VR",1,0.5,0.5
-"AO8017","VR Monitor",1,0.5,0
-"AR0044","VR",0.5,1,0.5
-"AR7862","VR Monitor",0.5,1,0.75
-"AR9449","VR",0.5,0,NA
-"AR9517","VR Monitor Stereo",0.5,0,0.5
-"AU9914","VR",0.5,0,0.5
-"CA0406","VR",0.5,1,1
-"CC7455","VR Monitor",0.5,1,0
-"DA6527","VR Monitor Stereo",0.5,0,0.5
-"DR3453","VR Monitor Stereo",0.5,0.5,0.5
-"EA4759","VR Monitor Stereo",1,0.5,1
-"EA4934","VR Monitor Stereo",0.5,0.5,0.5
-"EA8619","VR",1,0,1
-"EA9314","VR",1,0.5,0.75
+"AA9060","VR",1,1,1
+"AA9143","VR Monitor",1,1,1
+"AC8975","VR Monitor",1,1,1
+"AC9337","VR Monitor Stereo",1,1,1
+"AE1290","VR Monitor Stereo",1,1,1
+"AE2314","VR Monitor Stereo",1,NA,1
+"AE2423","VR Monitor Stereo",1,1,1
+"AE2567","VR Monitor",1,1,1
+"AE4411","VR",1,1,1
+"AE7022","VR",0.75,1,1
+"AE7577","VR Monitor Stereo",1,1,1
+"AE8118","VR",NA,NA,1
+"AH8153","VR",0.5,0,1
+"AI9736","VR Monitor Stereo",1,1,1
+"AL7521","VR Monitor Stereo",1,1,1
+"AM6705","VR",1,1,1
+"AN7725","VR",1,1,1
+"AO0649","VR",1,1,1
+"AO1417","VR",1,1,1
+"AO5595","VR",NA,1,1
+"AO7880","VR",1,1,1
+"AO8017","VR Monitor",1,1,1
+"AR0044","VR",1,1,1
+"AR7862","VR Monitor",1,1,0.5
+"AR9449","VR",0,0,1
+"AR9517","VR Monitor Stereo",1,1,1
+"AU9914","VR",0.75,1,0
+"CA0406","VR",1,1,1
+"CC7455","VR Monitor",1,1,1
+"DA6527","VR Monitor Stereo",0.75,1,1
+"DR3453","VR Monitor Stereo",1,1,1
+"EA4759","VR Monitor Stereo",1,1,1
+"EA4934","VR Monitor Stereo",1,1,1
+"EA8619","VR",1,1,1
+"EA9314","VR",1,1,1
 "EB2765","VR",1,1,1
-"EE4432","VR",0.5,1,0.5
-"EI3019","VR",1,1,0
-"EM8130","VR Monitor",0.5,1,0.5
-"EN3309","VR",0,0,0.5
-"EN5709","VR",1,1,0.25
-"EO9447","VR Monitor",0.5,0.5,0
-"ER1898","VR Monitor Stereo",0.5,0,0.5
-"ER2155","VR",0.5,0.5,0
-"ER7876","VR Monitor",0.5,1,1
+"EE4432","VR",1,1,1
+"EI3019","VR",1,1,1
+"EM8130","VR Monitor",1,1,1
+"EN3309","VR",1,1,1
+"EN5709","VR",1,1,1
+"EO9447","VR Monitor",1,1,1
+"ER1898","VR Monitor Stereo",1,1,1
+"ER2155","VR",1,1,0.5
+"ER7876","VR Monitor",1,1,1
 "HA0288","VR Monitor",1,1,1
-"HA1682","VR Monitor Stereo",1,0.75,NA
-"HA3649","VR Monitor",1,0,NA
-"HC1197","VR Monitor",0.5,0.5,0
-"HH7776","VR Monitor",0.5,0,0
-"HU2032","VR Monitor",0.5,0.5,0
-"HY4562","VR Monitor Stereo",0.5,1,0.5
-"IA2513","VR Monitor Stereo",1,0,0.25
-"IB9297","VR",0,0.5,0.75
-"IE3923","VR Monitor",0,0.5,0.5
-"IE8843","VR Monitor Stereo",0.5,1,1
-"II3615","VR Monitor Stereo",0.5,1,0
-"II6040","VR",1,0,0.5
-"II7116","VR Monitor",0.5,0,0
-"IK0518","VR Monitor",1,1,0.75
-"IL8872","VR Monitor",0.5,1,0.5
+"HA1682","VR Monitor Stereo",1,1,1
+"HA3649","VR Monitor",1,1,1
+"HC1197","VR Monitor",0.5,1,0.5
+"HH7776","VR Monitor",1,1,1
+"HU2032","VR Monitor",1,1,1
+"HY4562","VR Monitor Stereo",0.75,1,1
+"IA2513","VR Monitor Stereo",1,1,1
+"IB9297","VR",1,1,1
+"IE3923","VR Monitor",1,1,1
+"IE8843","VR Monitor Stereo",1,1,1
+"II3615","VR Monitor Stereo",0.75,1,1
+"II6040","VR",1,1,1
+"II7116","VR Monitor",1,1,1
+"IK0518","VR Monitor",1,1,1
+"IL8872","VR Monitor",1,1,1
 "IO2253","VR Monitor",1,1,1
-"IR0779","VR Monitor",0,1,0
-"IR1101","VR Monitor",1,1,0.5
-"LA0250","VR",1,0.5,0
-"LA2620","VR",1,0,1
-"LE1476","VR Monitor Stereo",1,0.5,0.25
-"LE9083","VR Monitor",0.5,0.5,1
+"IR0779","VR Monitor",0.75,1,1
+"IR1101","VR Monitor",1,1,1
+"LA0250","VR",1,1,1
+"LA2620","VR",1,1,1
+"LE1476","VR Monitor Stereo",1,1,1
+"LE9083","VR Monitor",0.5,1,1
 "LI5910","VR",1,1,1
-"LL5887","VR",1,0.5,0.5
-"LO3861","VR Monitor Stereo",1,0.5,0
-"MA1301","VR",1,0,1
+"LL5887","VR",1,1,1
+"LO3861","VR Monitor Stereo",1,1,1
+"MA1301","VR",0.75,1,1
 "MO2873","VR Monitor",1,1,1
-"MU0632","VR Monitor",0.5,0.5,0.5
-"MU9517","VR Monitor Stereo",1,0.5,1
-"OA0505","VR Monitor Stereo",1,1,0.25
-"OA0701","VR Monitor Stereo",1,1,0.5
-"OA2385","VR Monitor Stereo",0.5,0.5,1
-"OA5003","VR",1,0.5,0.5
-"OA8593","VR",0.5,1,0.5
-"OA9699","VR Monitor",1,0.5,0.75
-"OI0406","VR Monitor Stereo",0.5,1,NA
-"OI7107","VR",0.5,0.5,0
-"OO1638","VR Monitor",1,0.5,0.5
+"MU0632","VR Monitor",1,1,1
+"MU9517","VR Monitor Stereo",1,1,1
+"OA0505","VR Monitor Stereo",1,1,1
+"OA0701","VR Monitor Stereo",1,1,1
+"OA2385","VR Monitor Stereo",1,1,1
+"OA5003","VR",1,1,1
+"OA8593","VR",1,1,1
+"OA9699","VR Monitor",1,1,1
+"OI0406","VR Monitor Stereo",0,1,1
+"OI7107","VR",0,1,0.5
+"OO1638","VR Monitor",1,1,1
 "OO3782","VR",1,1,1
-"OO7105","VR Monitor",1,0.5,1
-"PO0892","VR",0.5,0.5,0.25
-"RA5840","VR Monitor Stereo",0.5,0.5,0
+"OO7105","VR Monitor",1,1,1
+"PO0892","VR",1,1,1
+"RA5840","VR Monitor Stereo",0.75,1,1
 "RA7601","VR Monitor",1,1,1
-"RA8589","VR",1,0.5,0.5
-"RG8876","VR",1,0.5,0.5
-"RI5022","VR",1,0.5,1
-"RL2345","VR",0.5,0.5,0.25
-"RL9680","VR Monitor",0.5,0,0
-"RR2012","VR Monitor",1,0,0
-"RS1080","VR",1,0,0.75
-"SC0288","VR Monitor Stereo",1,0.5,1
-"SI4816","VR",0.5,0.5,0.5
-"SI9216","VR Monitor Stereo",1,0,0.5
-"SU6398","VR",1,0,0
-"UA7716","VR Monitor Stereo",1,0.5,0
-"UG4668","VR",0,0,0
+"RA8589","VR",1,1,1
+"RG8876","VR",1,1,1
+"RI5022","VR",1,1,1
+"RL2345","VR",1,1,1
+"RL9680","VR Monitor",1,0,0.5
+"RR2012","VR Monitor",1,1,1
+"RS1080","VR",1,1,1
+"SC0288","VR Monitor Stereo",1,1,1
+"SI4816","VR",1,1,1
+"SI9216","VR Monitor Stereo",1,1,1
+"SU6398","VR",1,1,1
+"UA7716","VR Monitor Stereo",1,1,1
+"UG4668","VR",1,1,1
 "UI1542","VR Monitor",1,1,1
-"UI1985","VR",1,0.5,1
-"UK0825","VR",0.5,0,0.25
-"UO5311","VR",1,0,1
-"YA9918","VR",0.5,0,0
-"YB5143","VR Monitor",1,1,0
-"YE7121","VR Monitor Stereo",1,0.5,0.5
+"UI1985","VR",1,1,1
+"UK0825","VR",1,NA,0
+"UO5311","VR",1,1,1
+"YA9918","VR",1,1,1
+"YB5143","VR Monitor",0.75,0,0
+"YE7121","VR Monitor Stereo",1,1,1
 "YI8949","VR",1,1,1
-"YO1643","VR Monitor",1,0,0.5
-"YO8153","VR Monitor",0.5,0.5,1
-"hr4364","VR Monitor Stereo",0.5,0.75,0.25
+"YO1643","VR Monitor",1,1,1
+"YO8153","VR Monitor",0.75,0,1
+"hr4364","VR Monitor Stereo",1,1,1

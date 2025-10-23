@@ -205,8 +205,8 @@ readplot1 <- all_data_no_outliers %>%
 #make a little plot using wide format
 superbPlot(read_rt_type_wider,
     BSFactors   = "Condition", 
-    WSFactors   = "QuestionType(2)", 
-    variables   = c("Type1", "Type2"),
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
     statistic   = "meanNArm",
     errorbar    = "CI",
     gamma       = 0.95,
@@ -262,8 +262,8 @@ answerplot1 <- all_data_no_outliers %>%
 #make the little plot
 superbPlot(answer_rt_type_wider,
     BSFactors   = "Condition", 
-    WSFactors   = "QuestionType(2)", 
-    variables   = c("Type1", "Type2"),
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
     statistic   = "meanNArm",
     errorbar    = "CI",
     gamma       = 0.95,
@@ -407,8 +407,8 @@ write.csv(acc_type_wider, file = "typeacc.csv", row.names = F)
 #make the little plot
 superbPlot(acc_type_wider,
     BSFactors   = "Condition", 
-    WSFactors   = "QuestionType(2)", 
-    variables   = c("Type1", "Type2"),
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
     statistic   = "meanNArm",
     errorbar    = "CI",
     gamma       = 0.95,
