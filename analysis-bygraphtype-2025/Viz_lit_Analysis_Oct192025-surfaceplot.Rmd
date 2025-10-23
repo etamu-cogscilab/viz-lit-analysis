@@ -170,11 +170,24 @@ trial_type_means <- all_data_no_outliers %>%
 read_rt_type_wider <- trial_type_means %>%
   select(ParticipantId, Condition, TrialType, mean_readRT) %>%
   pivot_wider(names_from = TrialType,values_from = mean_readRT)
+
+# fill in na values with mean for type1, type2 and type3 RT
+# the following is supposed to work, but we get NaN from calculation of mean here, not sure why...
+#read_rt_type_wider_clean <- read_rt_type_wider %>% mutate(across(Type1, ~replace_na(., mean(., na.rm=TRUE))))
+read_rt_type_wider_clean <- read_rt_type_wider %>% replace_na(list(Type1 = mean(read_rt_type_wider$Type1, na.rm=TRUE)))
+read_rt_type_wider_clean <- read_rt_type_wider_clean %>% replace_na(list(Type2 = mean(read_rt_type_wider$Type2, na.rm=TRUE)))
+read_rt_type_wider_clean <- read_rt_type_wider_clean %>% replace_na(list(Type3 = mean(read_rt_type_wider$Type3, na.rm=TRUE)))
+
 answer_rt_type_wider <- trial_type_means %>%
   select(ParticipantId, Condition, TrialType, mean_answerRT) %>%
   pivot_wider(names_from = TrialType,values_from = mean_answerRT)
 write.csv(read_rt_type_wider, file = "readtypeRTs.csv", row.names = F)
 write.csv(answer_rt_type_wider, file = "answertypeRTs.csv", row.names = F)
+
+# fill in na values with mean for type1, type2 and type3 RT
+answer_rt_type_wider_clean <- answer_rt_type_wider %>% replace_na(list(Type1 = mean(answer_rt_type_wider$Type1, na.rm=TRUE)))
+answer_rt_type_wider_clean <- answer_rt_type_wider_clean %>% replace_na(list(Type2 = mean(answer_rt_type_wider$Type2, na.rm=TRUE)))
+answer_rt_type_wider_clean <- answer_rt_type_wider_clean %>% replace_na(list(Type3 = mean(answer_rt_type_wider$Type3, na.rm=TRUE)))
 
 
 #### READ RTs ####
@@ -203,7 +216,7 @@ readplot1 <- all_data_no_outliers %>%
    labs(y = "Reading RTs (ms)", title = "Read RTs") 
 
 #make a little plot using wide format
-superbPlot(read_rt_type_wider,
+superbPlot(read_rt_type_wider_clean,
     BSFactors   = "Condition", 
     WSFactors   = "QuestionType(2)", 
     variables   = c("Type1", "Type2"),
@@ -260,7 +273,7 @@ answerplot1 <- all_data_no_outliers %>%
    labs(y = "Answering RTs (ms)", title = "Answer RTs") 
  
 #make the little plot
-superbPlot(answer_rt_type_wider,
+superbPlot(answer_rt_type_wider_clean,
     BSFactors   = "Condition", 
     WSFactors   = "QuestionType(2)", 
     variables   = c("Type1", "Type2"),
@@ -404,8 +417,13 @@ acc_type_wider <- trial_type_mean_acc %>%
   pivot_wider(names_from = TrialType,values_from = mean_acc)
 write.csv(acc_type_wider, file = "typeacc.csv", row.names = F)
 
+# replace na with mean
+acc_type_wider_clean <- acc_type_wider %>% replace_na(list(Type1 = mean(acc_type_wider$Type1, na.rm=TRUE)))
+acc_type_wider_clean <- acc_type_wider_clean %>% replace_na(list(Type2 = mean(acc_type_wider$Type2, na.rm=TRUE)))
+acc_type_wider_clean <- acc_type_wider_clean %>% replace_na(list(Type3 = mean(acc_type_wider$Type3, na.rm=TRUE)))
+
 #make the little plot
-superbPlot(acc_type_wider,
+superbPlot(acc_type_wider_clean,
     BSFactors   = "Condition", 
     WSFactors   = "QuestionType(2)", 
     variables   = c("Type1", "Type2"),
