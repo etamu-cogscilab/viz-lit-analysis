@@ -198,8 +198,8 @@ readplot1 <- all_data_no_outliers %>%
                        ymax = overall_condition_mean + CI)) + 
    theme_classic() +  
    geom_point(size = 4) + 
-   geom_errorbar(width = .15, size = 0.85) +  
-   geom_line(size = 0.85) + 
+   geom_errorbar(width = .15, linewidth = 0.85) +  
+   geom_line(linewidth = 0.85) + 
    labs(y = "Reading RTs (ms)", title = "Read RTs") 
 
 #make a little plot using wide format
@@ -213,7 +213,7 @@ superbPlot(read_rt_type_wider,
     adjustments = list(
         purpose       = "difference"
     ),
-    plotStyle = "line",
+    plotLayout = "line",
     factorOrder = c("Condition", "QuestionType")
 ) + 
 theme_classic() + 
@@ -255,8 +255,8 @@ answerplot1 <- all_data_no_outliers %>%
                        ymax = overall_condition_mean + CI)) + 
    theme_classic() +  
    geom_point(size = 4) + 
-   geom_errorbar(width = .15, size = 0.85) +  
-   geom_line(size = 0.85) + 
+   geom_errorbar(width = .15, linewidth = 0.85) +  
+   geom_line(linewidth = 0.85) + 
    labs(y = "Answering RTs (ms)", title = "Answer RTs") 
  
 #make the little plot
@@ -270,7 +270,7 @@ superbPlot(answer_rt_type_wider,
     adjustments = list(
         purpose       = "difference"
     ),
-    plotStyle = "line",
+    plotLayout = "line",
     factorOrder = c("Condition", "QuestionType")
 ) + 
 theme_classic() + 
@@ -390,8 +390,8 @@ accplot1 <- all_data_no_outliers %>%
                        ymax = overall_condition_mean + CI)) + 
    theme_classic() +  
    geom_point(size = 4) + 
-   geom_errorbar(width = .15, size = 0.85) +  
-   geom_line(size = 0.85) + 
+   geom_errorbar(width = .15, linewidth = 0.85) +  
+   geom_line(linewidth = 0.85) + 
    labs(y = "Accuracy", title = "Accuracy") 
 
 trial_type_mean_acc <- all_data_no_outliers %>%
@@ -415,7 +415,7 @@ superbPlot(acc_type_wider,
     adjustments = list(
         purpose       = "difference"
     ),
-    plotStyle = "line",
+    plotLayout = "line",
     factorOrder = c("Condition", "QuestionType")
 ) + 
 theme_classic() + 
