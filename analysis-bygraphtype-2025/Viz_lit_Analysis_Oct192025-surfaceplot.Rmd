@@ -176,7 +176,7 @@ read_rt_type_wider <- trial_type_means %>%
 #read_rt_type_wider_clean <- read_rt_type_wider %>% mutate(across(Type1, ~replace_na(., mean(., na.rm=TRUE))))
 read_rt_type_wider_clean <- read_rt_type_wider %>% replace_na(list(Type1 = mean(read_rt_type_wider$Type1, na.rm=TRUE)))
 read_rt_type_wider_clean <- read_rt_type_wider_clean %>% replace_na(list(Type2 = mean(read_rt_type_wider$Type2, na.rm=TRUE)))
-read_rt_type_wider_clean <- read_rt_type_wider_clean %>% replace_na(list(Type3 = mean(read_rt_type_wider$Type3, na.rm=TRUE)))
+#read_rt_type_wider_clean <- read_rt_type_wider_clean %>% replace_na(list(Type3 = mean(read_rt_type_wider$Type3, na.rm=TRUE)))
 
 answer_rt_type_wider <- trial_type_means %>%
   select(ParticipantId, Condition, TrialType, mean_answerRT) %>%
@@ -187,7 +187,7 @@ write.csv(answer_rt_type_wider, file = "answertypeRTs.csv", row.names = F)
 # fill in na values with mean for type1, type2 and type3 RT
 answer_rt_type_wider_clean <- answer_rt_type_wider %>% replace_na(list(Type1 = mean(answer_rt_type_wider$Type1, na.rm=TRUE)))
 answer_rt_type_wider_clean <- answer_rt_type_wider_clean %>% replace_na(list(Type2 = mean(answer_rt_type_wider$Type2, na.rm=TRUE)))
-answer_rt_type_wider_clean <- answer_rt_type_wider_clean %>% replace_na(list(Type3 = mean(answer_rt_type_wider$Type3, na.rm=TRUE)))
+#answer_rt_type_wider_clean <- answer_rt_type_wider_clean %>% replace_na(list(Type3 = mean(answer_rt_type_wider$Type3, na.rm=TRUE)))
 
 
 #### READ RTs ####
@@ -234,9 +234,22 @@ theme_classic() +
 facet_wrap(vars(QuestionType))+
 labs(y = "Reading RTs (ms)", title = "Read RTs")
 
+# there are missing values in anova for some participants because they don't
+# do all trial types necessarily.  Probably a better way to do this, but
+# we widen table to make na easier to identify, fill in na with mean of column,
+# then make back to narrow version for the anova here
+x <- trial_type_means %>% 
+     select(ParticipantId, Condition, TrialType, mean_readRT) %>%
+     pivot_wider(names_from = TrialType, values_from = mean_readRT)
+x_clean <- x
+x_clean$Type1[is.na(x$Type1)] <- mean(x$Type1, na.rm=TRUE)
+x_clean$Type2[is.na(x$Type2)] <- mean(x$Type2, na.rm=TRUE)
+readRT_means_clean <- x_clean %>%
+     pivot_longer(Type1:Type2, names_to="TrialType", values_to = "mean_readRT")
+
 read_rt_type_anova <- aov_ez(id = "ParticipantId",
                              dv = "mean_readRT",
-                             data = trial_type_means,
+                             data = readRT_means_clean,
                               within = "TrialType",
                               between = "Condition",
                              anova_table = list(es = "pes") #might want to double-check these
@@ -291,9 +304,23 @@ theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
 facet_wrap(vars(QuestionType))+
 labs(y = "Answering RTs (ms)", title = "Answer RTs")
 
+# there are missing values in anova for some participants because they don't
+# do all trial types necessarily.  Probably a better way to do this, but
+# we widen table to make na easier to identify, fill in na with mean of column,
+# then make back to narrow version for the anova here
+x <- trial_type_means %>% 
+     select(ParticipantId, Condition, TrialType, mean_answerRT) %>%
+     pivot_wider(names_from = TrialType, values_from = mean_answerRT)
+x_clean <- x
+x_clean$Type1[is.na(x$Type1)] <- mean(x$Type1, na.rm=TRUE)
+x_clean$Type2[is.na(x$Type2)] <- mean(x$Type2, na.rm=TRUE)
+#x_clean$Type3[is.na(x$Type3)] <- mean(x$Type3, na.rm=TRUE)
+answerRT_means_clean <- x_clean %>%
+     pivot_longer(Type1:Type2, names_to="TrialType", values_to = "mean_answerRT")
+
 answer_rt_type_anova <- aov_ez(id = "ParticipantId",
                              dv = "mean_answerRT",
-                             data = trial_type_means,
+                             data = answerRT_means_clean,
                               within = "TrialType",
                               between = "Condition",
                              anova_table = list(es = "pes") #might want to double-check these
@@ -441,9 +468,23 @@ theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
 facet_wrap(vars(QuestionType))+
 labs(y = "Accuracy", title = "Accuracy")
 
+# there are missing values in anova for some participants because they don't
+# do all trial types necessarily.  Probably a better way to do this, but
+# we widen table to make na easier to identify, fill in na with mean of column,
+# then make back to narrow version for the anova here
+x <- trial_type_mean_acc %>% 
+     select(ParticipantId, Condition, TrialType, mean_acc) %>%
+     pivot_wider(names_from = TrialType, values_from = mean_acc)
+x_clean <- x
+x_clean$Type1[is.na(x$Type1)] <- mean(x$Type1, na.rm=TRUE)
+x_clean$Type2[is.na(x$Type2)] <- mean(x$Type2, na.rm=TRUE)
+#x_clean$Type3[is.na(x$Type3)] <- mean(x$Type3, na.rm=TRUE)
+acc_means_clean <- x_clean %>%
+     pivot_longer(Type1:Type2, names_to="TrialType", values_to = "mean_acc")
+
 acc_type_anova <- aov_ez(id = "ParticipantId",
                              dv = "mean_acc",
-                             data = trial_type_mean_acc,
+                             data = acc_means_clean,
                               within = "TrialType",
                               between = "Condition",
                              anova_table = list(es = "pes") #might want to double-check these
