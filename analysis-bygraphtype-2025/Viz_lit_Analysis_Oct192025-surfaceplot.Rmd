@@ -260,6 +260,12 @@ kable(nice(read_rt_type_anova))
 #posthoc test for trial type
 pairs(emmeans(read_rt_type_anova, "TrialType"), adjust = "Tukey")
 
+#posthoc test for condition, still using Tukey
+pairs(emmeans(read_rt_type_anova, "Condition"), adjust = "Tukey")
+
+#posthoc test for condition, others seem to be scheffe, sidak, bonferroni, dunnettx, mvt, none
+pairs(emmeans(read_rt_type_anova, "Condition"), adjust = "scheffe")
+
 #### ANSWER RTs ####
 
 #make some plots
@@ -331,6 +337,9 @@ kable(nice(answer_rt_type_anova))
 #posthoc test for trial type
 pairs(emmeans(answer_rt_type_anova, "TrialType"), adjust = "Tukey")
 #Question Type 3 much faster than Type 1/Type 2 (this is answering times)
+
+#posthoc test for condition, still using Tukey
+pairs(emmeans(answer_rt_type_anova, "Condition"), adjust = "Tukey")
 
 ref <- emmeans(answer_rt_type_anova,~Condition|TrialType)
 
@@ -499,6 +508,27 @@ pairs(emmeans(acc_type_anova, "TrialType"), adjust = "Tukey")
 ref <- emmeans(acc_type_anova,~Condition|TrialType)
 
 pairs(ref, adjust = "Tukey")
+
+# determine the mean accuracy for question types 1, 2 and 3
+accplot2 <- all_data_no_outliers %>% 
+   group_by(ParticipantId, TrialType) %>% 
+   summarize(overallmean = mean(Correct_Avg)) %>% 
+   group_by(TrialType) %>% 
+   summarize(overall_trialtype_mean = mean(overallmean), 
+             se = std.error(overallmean), 
+             n = n(), 
+             CI = qt(0.975,df=n-1)*se) 
+
+ ggplot(accplot2, aes(TrialType, 
+                       overall_trialtype_mean, 
+                       group = 1, 
+                       ymin = overall_trialtype_mean - CI, 
+                       ymax = overall_trialtype_mean + CI)) + 
+   theme_classic() +  
+   geom_point(size = 4) + 
+   geom_errorbar(width = .15, linewidth = 0.85) +  
+   geom_line(linewidth = 0.85) + 
+   labs(y = "Accuracy", title = "Accuracy") 
 
 ```
 
