@@ -534,5 +534,6 @@ accplot2 <- all_data_no_outliers %>%
    geom_line(linewidth = 0.85) + 
    labs(y = "Accuracy", title = "Accuracy") 
 
+kable(accplot2)
 ```
 
