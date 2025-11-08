@@ -303,7 +303,7 @@ superbPlot(answer_rt_type_wider_clean,
     adjustments = list(
         purpose       = "difference"
     ),
-    plotLayout = "line",
+    plotLayout = "halfwidthline",
     factorOrder = c("Condition", "QuestionType")
 ) + 
 theme_classic() + 
@@ -311,6 +311,24 @@ theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
 facet_wrap(vars(QuestionType))+
 labs(y = "Answering RTs (ms)", title = "Answer RTs")
 
+#make the little plot, use tryon for purpose as suggested because of group's heterogeneous variances
+superbPlot(answer_rt_type_wider_clean,
+    BSFactors   = "Condition", 
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
+    statistic   = "meanNArm",
+    errorbar    = "CI",
+    gamma       = 0.95,
+    adjustments = list(
+        purpose       = "tryon"
+    ),
+    plotLayout = "halfwidthline",
+    factorOrder = c("Condition", "QuestionType")
+) + 
+theme_classic() + 
+theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(vars(QuestionType))+
+labs(y = "Answering RTs (ms)", title = "Answer RTs")
 
 # there are missing values in anova for some participants because they don't
 # do all trial types necessarily.  Probably a better way to do this, but
@@ -354,6 +372,20 @@ pairs(ref, adjust = "Tukey")
 
 ```
 
+# Alternative Analysis using glmm TMB package
+
+```{r}
+
+model_glmm_hom = glmmTMB(mean_readRT ~ Condition * TrialType + (1 + ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ 1, REML = FALSE)
+model_glmm_hetero = glmmTMB(mean_readRT ~ Condition * TrialType + (1 + ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ Condition, REML = FALSE)
+
+
+anova(model_glmm_hom, model_glmm_hetero)
+```
 
 ## Accuracy
 ```{r}
