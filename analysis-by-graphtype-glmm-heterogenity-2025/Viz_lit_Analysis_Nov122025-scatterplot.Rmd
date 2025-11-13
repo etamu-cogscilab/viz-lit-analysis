@@ -1,0 +1,778 @@
+---
+title: "Visualization Literacy Analysis"
+author: "Derek Harter, Shulan Lu"
+date: "11/12/2025"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, knitr, ez, psychReport, superb, plotrix, emmeans, afex, readxl,
+               irr, cccrm, foreign, stringr, glmmTMB, car) 
+
+knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
+options(width = 90)
+```
+
+## Read in data files
+
+Raw data is in the `../AccData` subdirectory in two excel spreadsheet
+files per participant. The following code combines into single dataframe
+of all data.
+
+```{r, warning=F, message=F}
+
+#grab files from google drive (only have to do this once)
+# source("getFromGoogleDrive.R")
+
+#get the first 6? characters of each data file
+#get unique values of these
+# this is list of subject ids
+
+raw_file_names <- list.files("../AccData")
+first_six <- substr(raw_file_names, 1, 6)
+sub_ids <- unique(first_six)
+
+
+# fast_RTs <- data.frame(ParticipantId = character(),
+#                        TrialName = character(),
+#                        type = character(),
+#                        time = numeric()
+# )
+
+all_data <- NULL
+
+for (i in 1:length(sub_ids)){
+  
+  if (grepl("~$", sub_ids[i], fixed = T)){
+    next
+  }
+  
+  temp_file1 <- read_xlsx(paste0("../AccData/", sub_ids[i], "_1.xlsx")) %>%
+    slice(1:17) %>%
+    select(-starts_with("Order")) %>%
+    rename(correct = 8)
+  
+  temp_file2 <- read_xlsx(paste0("../AccData/", sub_ids[i], "_2.xlsx")) %>%
+    slice(1:17) %>%
+     select(-starts_with("Order")) %>%
+    rename(correct = 8)
+  
+  new_temp <- temp_file1 %>%
+    bind_cols(temp_file2$correct) %>%
+    rename(Correct_1 = correct, Correct_2 = "...9") %>%
+    mutate(AnswerRT = TimeToBeginInput - TimeToReadQuestion)
+
+
+  all_data <- all_data %>%
+    bind_rows(new_temp)
+  
+}
+
+all_data <- all_data %>%
+  rename(readRT = TimeToReadQuestion, totalRT = TimeToBeginInput)
+
+#read in trialtype key (I created this from an early version of the previous paper)
+trial_type_key <- read.csv("../trial_type_key.csv", stringsAsFactors = F)
+
+all_data <- all_data %>%
+  mutate(TrialType = trial_type_key$TrialType[match(TrialName, trial_type_key$TrialName)]) %>%
+  mutate(TrialType = paste0("Type",TrialType))
+
+
+# remove temporary dataframes to keep workspace cleaner as we go forward
+rm(new_temp)
+rm(temp_file1)
+rm(temp_file2)
+rm(trial_type_key)
+```
+
+## Basic checks
+
+Just a sanity check of all the data. Summary of number of subjects in
+each of the 3 condition types.
+
+```{r}
+
+#how many participants per condition
+all_data %>%
+  group_by(ParticipantId, Condition) %>%
+  summarize(ntrials = n()) %>%
+  group_by(Condition) %>%
+  summarize(nsubs = n()) %>%
+  kable()
+
+#why is the balance so off?
+
+
+```
+
+## Remove outliers based on RT
+
+Removing outliers, resulting in data frame named `all_data_no_outliers`.
+
+1.  All trials where the `AnswerRT` is less than 2 seconds are removed
+    first, which assumes these reactions were too fast so were done
+    without an actual considered response.
+2.  All trials where the `AnswerRT` is 3 standard deviations different
+    from the mean are removed next.
+
+Table shows summary of mean and standard deviation of answer RT by each
+of the trial question types, as well as the 3 standard deviation upper
+and lower bound of the reaction time.
+
+Displayed histogram is a sanity check of the number of trials each
+participant in all of the data have done. Most participants should do 16
+trials. Less than that are from dropped data for outliers.
+
+```{r}
+
+#removing on trial-by-trial basis
+
+
+#remove answerRTs below 2000ms first
+all_data_remove <- all_data %>%
+  filter(AnswerRT >= 2000)
+dim(all_data)[1]
+dim(all_data_remove)[1]
+#drops 7 trials
+
+# also remove AnswerRT that are more than 3 standard deviations away from
+# the mean
+all_data_no_outliers <- all_data_remove %>%
+  group_by(TrialName) %>%
+  filter((!(abs(AnswerRT - mean(AnswerRT)) > 3.0*sd(AnswerRT))))
+dim(all_data_no_outliers)[1]
+#drops 47 more trials
+
+
+rt_data_summary <- all_data_no_outliers %>%
+  group_by(TrialName) %>%
+  summarize(meanAnswerRT = mean(AnswerRT, na.rm = T),
+            sdAnswerRT = sd(AnswerRT, na.rm = T),
+            LB = meanAnswerRT - 3*sdAnswerRT,
+            UB = meanAnswerRT + 3*sdAnswerRT)
+kable(rt_data_summary)
+rm(rt_data_summary)
+
+
+all_data_no_outliers %>%
+  group_by(ParticipantId) %>%
+  summarize(ntrials = n()) %>%
+  with(hist(ntrials, breaks = 0:17))
+
+rm(all_data_remove)
+##maybe consider replacing outliers with means instead of removing them?
+
+```
+
+## Extract Only One Type of Chart
+
+Create a dataframe from the data with no outliers that contains only
+XChartQ1 through XChartQ4 trials for the following analysis.
+
+We replace the `all_data_no_outliers` dataframe with one containing only
+the selected TrialName question type here, so past this point we are
+analyzing only this particular TrialName type.
+
+We show the table again of the mean RT for this question type. The table
+should match the one done with all of the data, but we should only have
+the particular question trial name type now in the data.
+
+We also again plot the histogram of the number of trials. Participants
+should have seen 4 of each particular question type, but after removing
+outliers some only have 3, 2 or 1 remaining.
+
+```{r}
+all_data_no_outliers <- all_data_no_outliers %>%
+  filter(grepl("ScatterplotQ[0-9]", TrialName))
+
+rt_data_summary <- all_data_no_outliers %>%
+  group_by(TrialName) %>%
+  summarize(meanAnswerRT = mean(AnswerRT, na.rm = T),
+            sdAnswerRT = sd(AnswerRT, na.rm = T),
+            LB = meanAnswerRT - 3*sdAnswerRT,
+            UB = meanAnswerRT + 3*sdAnswerRT)
+kable(rt_data_summary)
+rm(rt_data_summary)
+
+
+all_data_no_outliers %>%
+  group_by(ParticipantId) %>%
+  summarize(ntrials = n()) %>%
+  with(hist(ntrials, breaks = 0:5))
+```
+
+## Compare Read RT
+
+Compare the reading reaction times for the selected question type.
+
+### Extract wide dataframe
+
+In this cell we convert the data to a wide format, selection only
+Condition, TrialType and the mean_readRT, and widening the TrialType
+column.
+
+We have also filled in na/missing values here as a final step here.
+Maybe we should instead just change from removing outliers to replacing
+with mean. Also the filling missing values code here should be easier to
+do, needs to be fixed. But result should be that any na in the resulting
+wide table is replaced with the mean for the particular Type.
+
+```{r}
+#compare read times (should be no differences of condition)
+
+trial_type_means <- all_data_no_outliers %>%
+  group_by(ParticipantId, Condition, TrialType) %>%
+  summarize(mean_readRT = mean(readRT), n = n())
+
+# first, make .csv files in wide format to double check in statview
+read_rt <- trial_type_means %>%
+  select(ParticipantId, Condition, TrialType, mean_readRT) %>%
+  pivot_wider(names_from = TrialType,values_from = mean_readRT)
+
+# fill in na values with mean for type1, type2 and type3 RT
+# the following is supposed to work, but we get NaN from calculation of mean here, not sure why...
+#read_rt_type_wider_clean <- read_rt_type_wider %>% mutate(across(Type1, ~replace_na(., mean(., na.rm=TRUE))))
+read_rt <- read_rt %>% replace_na(list(Type1 = mean(read_rt$Type1, na.rm=TRUE)))
+read_rt <- read_rt %>% replace_na(list(Type2 = mean(read_rt$Type2, na.rm=TRUE)))
+read_rt <- read_rt %>% replace_na(list(Type3 = mean(read_rt$Type3, na.rm=TRUE)))
+
+
+read_rt_summary <- read_rt %>%
+  group_by(Condition) %>%
+  summarize(meanType1 = mean(Type1, na.rm = T),
+            meanType2 = mean(Type2, na.rm = T),
+            meanType3 = mean(Type3, na.rm=T))
+kable(read_rt_summary)
+rm(read_rt_summary)
+
+#rm(trial_type_means)
+```
+
+### Basic plots of main effect and wider format
+
+Plot of read RT condition main effect, as well as wider format plot by
+the trial types.
+
+```{r}
+
+#just condition main effect
+readplot1 <- all_data_no_outliers %>% 
+   group_by(ParticipantId, Condition) %>% 
+   summarize(overallmean = mean(readRT)) %>% 
+   group_by(Condition) %>% 
+   summarize(overall_condition_mean = mean(overallmean), 
+             se = std.error(overallmean), 
+             n = n(), 
+             CI = qt(0.975,df=n-1)*se) 
+
+ ggplot(readplot1, aes(Condition, 
+                       overall_condition_mean, 
+                       group = 1, 
+                       ymin = overall_condition_mean - CI, 
+                       ymax = overall_condition_mean + CI)) + 
+   theme_classic() +  
+   geom_point(size = 4) + 
+   geom_errorbar(width = .15, linewidth = 0.85) +  
+   geom_line(linewidth = 0.85) + 
+   labs(y = "Reading RTs (ms)", title = "Read RTs") 
+
+rm(readplot1)
+
+#make a little plot using wide format
+superbPlot(read_rt,
+    BSFactors   = "Condition", 
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
+    statistic   = "meanNArm",
+    errorbar    = "CI",
+    gamma       = 0.95,
+    adjustments = list(
+        purpose       = "difference"
+    ),
+    plotLayout = "line",
+    factorOrder = c("Condition", "QuestionType")
+) + 
+theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(vars(QuestionType))+
+labs(y = "Reading RTs (ms)", title = "Read RTs")
+
+```
+
+### Correct wider plot heterogeneous variance
+
+The message from the superbPlot may indicate that some of the groups'
+variances are heterogeneous. We can try using the `tryon` purpose option
+as suggested, read [Unequal variances, Welch test, Tryon adjustment, and
+superb](https://dcousin3.github.io/superb/articles/Vignette7.html).
+
+```{r}
+# make the wide plot, use tryon for purpose as suggested because of group's heterogeneous variances
+superbPlot(read_rt,
+    BSFactors   = "Condition", 
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
+    statistic   = "meanNArm",
+    errorbar    = "CI",
+    gamma       = 0.95,
+    adjustments = list(
+        purpose       = "tryon"
+    ),
+    plotLayout = "line",
+    factorOrder = c("Condition", "QuestionType")
+) + 
+theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(vars(QuestionType))+
+labs(y = "Reading RTs (ms)", title = "Read RTs")
+
+```
+
+### Perform anova and post-hoc tests
+
+Finally perform anova on the read RT data and various posthoc tests.
+
+```{r}
+
+# need back into long format for following, but we will use out dataframe
+# will filled in na/missing and make wide again here
+read_rt_long <- read_rt %>%
+     pivot_longer(Type1:Type3, names_to="TrialType", values_to = "mean_readRT")
+
+read_rt_anova <- aov_ez(id = "ParticipantId",
+                        dv = "mean_readRT",
+                        data = read_rt_long,
+                        within = "TrialType",
+                        between = "Condition",
+                        anova_table = list(es = "pes") #might want to double-check these
+)
+
+kable(nice(read_rt_anova))
+
+#posthoc test for trial type
+pairs(emmeans(read_rt_anova, "TrialType"), adjust = "Tukey")
+
+#posthoc test for condition, still using Tukey
+pairs(emmeans(read_rt_anova, "Condition"), adjust = "Tukey")
+
+#posthoc test for condition, others seem to be scheffe, sidak, bonferroni, dunnettx, mvt, none
+pairs(emmeans(read_rt_anova, "Condition"), adjust = "scheffe")
+
+rm(read_rt_long)
+rm(read_rt_anova)
+```
+
+### Alternative Analysis using glmm TMB package
+
+The following analysis is for the heterogenous group condition analysis.  See
+[]().
+
+The following determines if a more complex model is justified.
+
+```{r}
+
+model_glmm_hom = glmmTMB(mean_readRT ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ 1, REML = FALSE)
+model_glmm_hetero = glmmTMB(mean_readRT ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ Condition, REML = FALSE)
+
+
+anova(model_glmm_hom, model_glmm_hetero)
+```
+
+### Try overall effect reporting
+
+```{r}
+fixed_effects_anova <- Anova(model_glmm_hom, type="III")
+kable(fixed_effects_anova)
+```
+
+### EMM on Condition and Interaction
+
+If the glmm analysis is not significant, just use the homogeneous model.  Otherwise report on the more
+complex heterogeneous model?
+
+```{r}
+emm_main_condition <- emmeans(model_glmm_hom,
+                           specs = ~ Condition,
+                           type = "response")
+
+condition_results <- pairs(emm_main_condition)
+
+
+kable(condition_results)
+```
+
+```{r}
+emm_interaction <- emmeans(model_glmm_hom,
+                           specs = ~ Condition * TrialType,
+                           type = "response")
+
+simple_effects_results <- pairs(emm_interaction, by = "TrialType")
+
+
+kable(simple_effects_results)
+```
+
+
+## Compare Answer RT
+
+### Extract wide dataframe
+
+Do all of the previous, but for the answer reaction times for the
+selected question types.
+
+We again create a dataframe in needed format of only the answer RT data,
+filling in na/missing values in the data.
+
+```{r}
+#compare answer times 
+
+trial_type_means <- all_data_no_outliers %>%
+  group_by(ParticipantId, Condition, TrialType) %>%
+  summarize(mean_answerRT = mean(AnswerRT), n = n())
+
+# first, make .csv files in wide format to double check in statview
+answer_rt <- trial_type_means %>%
+  select(ParticipantId, Condition, TrialType, mean_answerRT) %>%
+  pivot_wider(names_from = TrialType, values_from = mean_answerRT)
+
+# fill in na values with mean for type1, type2 and type3 RT
+# the following is supposed to work, but we get NaN from calculation of mean here, not sure why...
+#read_rt_type_wider_clean <- read_rt_type_wider %>% mutate(across(Type1, ~replace_na(., mean(., na.rm=TRUE))))
+answer_rt <- answer_rt %>% replace_na(list(Type1 = mean(answer_rt$Type1, na.rm=TRUE)))
+answer_rt <- answer_rt %>% replace_na(list(Type2 = mean(answer_rt$Type2, na.rm=TRUE)))
+answer_rt <- answer_rt %>% replace_na(list(Type3 = mean(answer_rt$Type3, na.rm=TRUE)))
+
+
+answer_rt_summary <- answer_rt %>%
+  group_by(Condition) %>%
+  summarize(meanType1 = mean(Type1, na.rm = T),
+            meanType2 = mean(Type2, na.rm = T),
+            meanType3 = mean(Type3, na.rm=T))
+kable(answer_rt_summary)
+rm(answer_rt_summary)
+
+#rm(trial_type_means)
+```
+
+### Basic plots of main effect and wider format
+
+Plot of answer RT condition main effect, as well as wider format plot by
+the trial types.
+
+```{r}
+
+#just condition main effect
+answerplot1 <- all_data_no_outliers %>% 
+   group_by(ParticipantId, Condition) %>% 
+   summarize(overallmean = mean(AnswerRT)) %>% 
+   group_by(Condition) %>% 
+   summarize(overall_condition_mean = mean(overallmean), 
+             se = std.error(overallmean), 
+             n = n(), 
+             CI = qt(0.975,df=n-1)*se) 
+
+ ggplot(answerplot1, aes(Condition, 
+                       overall_condition_mean, 
+                       group = 1, 
+                       ymin = overall_condition_mean - CI, 
+                       ymax = overall_condition_mean + CI)) + 
+   theme_classic() +  
+   geom_point(size = 4) + 
+   geom_errorbar(width = .15, linewidth = 0.85) +  
+   geom_line(linewidth = 0.85) + 
+   labs(y = "Answer RTs (ms)", title = "Answer RTs") 
+
+rm(answerplot1)
+
+#make a little plot using wide format
+superbPlot(answer_rt,
+    BSFactors   = "Condition", 
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
+    statistic   = "meanNArm",
+    errorbar    = "CI",
+    gamma       = 0.95,
+    adjustments = list(
+        purpose       = "difference"
+    ),
+    plotLayout = "line",
+    factorOrder = c("Condition", "QuestionType")
+) + 
+theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(vars(QuestionType))+
+labs(y = "Answer RTs (ms)", title = "Answer RTs")
+
+```
+
+### Correct wider plot heterogeneous variance
+
+The message from the superbPlot may indicate that some of the groups'
+variances are heterogeneous. We can try using the `tryon` purpose option
+as suggested, read [Unequal variances, Welch test, Tryon adjustment, and
+superb](https://dcousin3.github.io/superb/articles/Vignette7.html).
+
+```{r}
+# make the wide plot, use tryon for purpose as suggested because of group's heterogeneous variances
+superbPlot(answer_rt,
+    BSFactors   = "Condition", 
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
+    statistic   = "meanNArm",
+    errorbar    = "CI",
+    gamma       = 0.95,
+    adjustments = list(
+        purpose       = "tryon"
+    ),
+    plotLayout = "line",
+    factorOrder = c("Condition", "QuestionType")
+) + 
+theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(vars(QuestionType))+
+labs(y = "Answer RTs (ms)", title = "Answer RTs")
+
+```
+
+### Perform anova and post-hoc tests
+
+Finally perform anova on the answer RT data and various posthoc tests.
+
+```{r}
+
+# need back into long format for following, but we will use out dataframe
+# will filled in na/missing and make wide again here
+answer_rt_long <- answer_rt %>%
+     pivot_longer(Type1:Type3, names_to="TrialType", values_to = "mean_answerRT")
+
+answer_rt_anova <- aov_ez(id = "ParticipantId",
+                          dv = "mean_answerRT",
+                          data = answer_rt_long,
+                          within = "TrialType",
+                          between = "Condition",
+                          anova_table = list(es = "pes") #might want to double-check these
+)
+
+kable(nice(answer_rt_anova))
+
+#posthoc test for trial type
+pairs(emmeans(answer_rt_anova, "TrialType"), adjust = "Tukey")
+
+#posthoc test for condition, still using Tukey
+pairs(emmeans(answer_rt_anova, "Condition"), adjust = "Tukey")
+
+#posthoc test for condition, others seem to be scheffe, sidak, bonferroni, dunnettx, mvt, none
+pairs(emmeans(answer_rt_anova, "Condition"), adjust = "scheffe")
+
+rm(answer_rt_long)
+rm(answer_rt_anova)
+```
+
+### Alternative Analysis using glmm TMB package
+
+The following analysis is for the heterogenous group condition analysis.  See
+[]().
+
+The following determines if a more complex model is justified.
+
+```{r}
+
+model_glmm_hom = glmmTMB(mean_answerRT ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ 1, REML = FALSE)
+model_glmm_hetero = glmmTMB(mean_answerRT ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ Condition, REML = FALSE)
+
+
+anova(model_glmm_hom, model_glmm_hetero)
+```
+
+### Try overall effect reporting
+
+```{r}
+fixed_effects_anova <- Anova(model_glmm_hom, type="III")
+kable(fixed_effects_anova)
+```
+
+### EMM on Condition and Interaction
+
+If the glmm analysis is not significant, just use the homogeneous model.  Otherwise report on the more
+complex heterogeneous model?
+
+```{r}
+emm_main_condition <- emmeans(model_glmm_hom,
+                           specs = ~ Condition,
+                           type = "response")
+
+condition_results <- pairs(emm_main_condition)
+
+
+kable(condition_results)
+```
+
+```{r}
+emm_interaction <- emmeans(model_glmm_hom,
+                           specs = ~ Condition * TrialType,
+                           type = "response")
+
+simple_effects_results <- pairs(emm_interaction, by = "TrialType")
+
+
+kable(simple_effects_results)
+```
+
+
+## Compare Accuracy
+
+### Extract wide dataframe
+
+Do all of the previous again but on the Accuracy results.
+
+We again create a dataframe in needed format of only the accuracy data.\
+A bit different from before, only need to create an avverage of the two
+correct features we have. But then we do a similar transformation into
+wide format and replace na/missing values.
+
+```{r}
+all_data_no_outliers <- all_data_no_outliers %>%
+  rowwise() %>%
+  mutate(Correct_Avg = mean(c(Correct_1, Correct_2)))
+
+trial_type_mean_accuracy <- all_data_no_outliers %>%
+  group_by(ParticipantId, Condition, TrialType) %>%
+  summarize(mean_acc = mean(Correct_Avg),
+            n = n())
+
+accuracy <- trial_type_mean_accuracy %>%
+  select(ParticipantId, Condition, TrialType, mean_acc) %>%
+  pivot_wider(names_from = TrialType, values_from = mean_acc)
+
+# replace na with mean
+accuracy <- accuracy %>% replace_na(list(Type1 = mean(accuracy$Type1, na.rm=TRUE)))
+accuracy <- accuracy %>% replace_na(list(Type2 = mean(accuracy$Type2, na.rm=TRUE)))
+accuracy <- accuracy %>% replace_na(list(Type3 = mean(accuracy$Type3, na.rm=TRUE)))
+
+rm(trial_type_mean_accuracy)
+```
+
+### Basic plots of main effect and wider format
+
+```{r}
+#just condition main effect
+accplot1 <- all_data_no_outliers %>% 
+   group_by(ParticipantId, Condition) %>% 
+   summarize(overallmean = mean(Correct_Avg)) %>% 
+   group_by(Condition) %>% 
+   summarize(overall_condition_mean = mean(overallmean), 
+             se = std.error(overallmean), 
+             n = n(), 
+             CI = qt(0.975,df=n-1)*se) 
+
+ggplot(accplot1, aes(Condition, 
+                       overall_condition_mean, 
+                       group = 1, 
+                       ymin = overall_condition_mean - CI, 
+                       ymax = overall_condition_mean + CI)) + 
+   theme_classic() +  
+   geom_point(size = 4) + 
+   geom_errorbar(width = .15, linewidth = 0.85) +  
+   geom_line(linewidth = 0.85) + 
+   labs(y = "Accuracy", title = "Accuracy") 
+
+rm(accplot1)
+
+#make the little plot
+superbPlot(accuracy,
+    BSFactors   = "Condition", 
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
+    statistic   = "meanNArm",
+    errorbar    = "CI",
+    gamma       = 0.95,
+    adjustments = list(
+        purpose       = "difference"
+    ),
+    plotLayout = "line",
+    factorOrder = c("Condition", "QuestionType")
+) + 
+theme_classic() + 
+theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(vars(QuestionType))+
+labs(y = "Accuracy", title = "Accuracy") 
+```
+
+### Correct wider plot heterogeneous variance
+
+The message from the superbPlot may indicate that some of the groups'
+variances are heterogeneous. We can try using the `tryon` purpose option
+as suggested, read [Unequal variances, Welch test, Tryon adjustment, and
+superb](https://dcousin3.github.io/superb/articles/Vignette7.html).
+
+```{r}
+# make the wide plot, use tryon for purpose as suggested because of group's heterogeneous variances
+superbPlot(accuracy,
+    BSFactors   = "Condition", 
+    WSFactors   = "QuestionType(3)", 
+    variables   = c("Type1", "Type2", "Type3"),
+    statistic   = "meanNArm",
+    errorbar    = "CI",
+    gamma       = 0.95,
+    adjustments = list(
+        purpose       = "tryon"
+    ),
+    plotLayout = "line",
+    factorOrder = c("Condition", "QuestionType")
+) + 
+theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(vars(QuestionType))+
+labs(y = "Accuracy", title = "Accuracy")
+
+```
+
+### Perform anova and post-hoc tests
+
+Finally perform anova on the accuracy data and various posthoc tests.
+
+```{r}
+
+# need back into long format for following, but we will use out dataframe
+# will filled in na/missing and make wide again here
+accuracy_long <- accuracy %>%
+     pivot_longer(Type1:Type3, names_to="TrialType", values_to = "mean_acc")
+
+accuracy_anova <- aov_ez(id = "ParticipantId",
+                          dv = "mean_acc",
+                          data = accuracy_long,
+                          within = "TrialType",
+                          between = "Condition",
+                          anova_table = list(es = "pes") #might want to double-check these
+)
+
+kable(nice(accuracy_anova))
+
+#posthoc test for trial type
+pairs(emmeans(accuracy_anova, "TrialType"), adjust = "Tukey")
+
+#posthoc test for condition, still using Tukey
+pairs(emmeans(accuracy_anova, "Condition"), adjust = "Tukey")
+
+#posthoc test for condition, others seem to be scheffe, sidak, bonferroni, dunnettx, mvt, none
+pairs(emmeans(accuracy_anova, "Condition"), adjust = "scheffe")
+
+rm(accuracy_long)
+rm(accuracy_anova)
+```

@@ -20,6 +20,10 @@ options(width = 90)
 dir.create(file.path(getwd(),"/plots"), showWarnings = F)
 ```
 
+```{r}
+library(glmmTMB)
+library(car)
+```
 
 ## Read in data files
 
@@ -376,16 +380,70 @@ pairs(ref, adjust = "Tukey")
 
 ```{r}
 
-model_glmm_hom = glmmTMB(mean_readRT ~ Condition * TrialType + (1 + ParticipantId),
+model_glmm_hom = glmmTMB(mean_readRT ~ Condition * TrialType + (1 | ParticipantId),
                             data=trial_type_means, family = Gamma(link="log"),
                             dispformula = ~ 1, REML = FALSE)
-model_glmm_hetero = glmmTMB(mean_readRT ~ Condition * TrialType + (1 + ParticipantId),
+model_glmm_hetero = glmmTMB(mean_readRT ~ Condition * TrialType + (1 | ParticipantId),
                             data=trial_type_means, family = Gamma(link="log"),
                             dispformula = ~ Condition, REML = FALSE)
 
 
 anova(model_glmm_hom, model_glmm_hetero)
 ```
+
+# Try overall effect reporting
+
+```{r}
+fixed_effects_anova <- Anova(model_glmm_hom, type="III")
+kable(fixed_effects_anova)
+```
+
+# Do the same for answer RT
+
+```{r}
+
+model_glmm_hom = glmmTMB(mean_answerRT ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ 1, REML = FALSE)
+model_glmm_hetero = glmmTMB(mean_answerRT ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ Condition, REML = FALSE)
+
+
+anova(model_glmm_hom, model_glmm_hetero)
+```
+
+```{r}
+fixed_effects_anova <- Anova(model_glmm_hom, type="III")
+kable(fixed_effects_anova)
+```
+
+```{r}
+library(emmeans)
+```
+
+```{r}
+emm_main_condition <- emmeans(model_glmm_hom,
+                           specs = ~ Condition,
+                           type = "response")
+
+condition_results <- pairs(emm_main_condition)
+
+
+kable(condition_results)
+```
+
+```{r}
+emm_interaction <- emmeans(model_glmm_hom,
+                           specs = ~ Condition * TrialType,
+                           type = "response")
+
+simple_effects_results <- pairs(emm_interaction, by = "TrialType")
+
+
+kable(simple_effects_results)
+```
+
 
 ## Accuracy
 ```{r}
@@ -569,3 +627,56 @@ accplot2 <- all_data_no_outliers %>%
 kable(accplot2)
 ```
 
+
+# Alternative Analysis using glmm TMB package
+
+```{r}
+
+model_glmm_hom = glmmTMB(mean_acc ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_mean_acc, family = Gamma(link="log"),
+                            dispformula = ~ 1, REML = FALSE)
+model_glmm_hetero = glmmTMB(mean_acc ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_mean_acc, family = Gamma(link="log"),
+                            dispformula = ~ Condition, REML = FALSE)
+
+
+anova(model_glmm_hom, model_glmm_hetero)
+```
+
+# Try overall effect reporting
+
+```{r}
+fixed_effects_anova <- Anova(model_glmm_hom, type="III")
+kable(fixed_effects_anova)
+```
+
+```{r}
+fixed_effects_anova <- Anova(model_glmm_hom, type="III")
+kable(fixed_effects_anova)
+```
+
+```{r}
+library(emmeans)
+```
+
+```{r}
+emm_main_condition <- emmeans(model_glmm_hom,
+                           specs = ~ Condition,
+                           type = "response")
+
+condition_results <- pairs(emm_main_condition)
+
+
+kable(condition_results)
+```
+
+```{r}
+emm_interaction <- emmeans(model_glmm_hom,
+                           specs = ~ Condition * TrialType,
+                           type = "response")
+
+simple_effects_results <- pairs(emm_interaction, by = "TrialType")
+
+
+kable(simple_effects_results)
+```
