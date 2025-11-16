@@ -1,0 +1,370 @@
+---
+title: "Visualization Literacy Analysis"
+author: "Derek Harter, Shulan Lu"
+date: "11/12/2025"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, knitr, ez, psychReport, superb, plotrix, emmeans, afex, readxl,
+               irr, cccrm, foreign, stringr, glmmTMB, car) 
+
+knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
+options(width = 90)
+```
+
+## Read in data files
+
+Raw data is in the `../AccData` subdirectory in two excel spreadsheet
+files per participant. The following code combines into single dataframe
+of all data.
+
+```{r, warning=F, message=F}
+
+#grab files from google drive (only have to do this once)
+# source("getFromGoogleDrive.R")
+
+#get the first 6? characters of each data file
+#get unique values of these
+# this is list of subject ids
+
+raw_file_names <- list.files("../AccData")
+first_six <- substr(raw_file_names, 1, 6)
+sub_ids <- unique(first_six)
+
+
+# fast_RTs <- data.frame(ParticipantId = character(),
+#                        TrialName = character(),
+#                        type = character(),
+#                        time = numeric()
+# )
+
+all_data <- NULL
+
+for (i in 1:length(sub_ids)){
+  
+  if (grepl("~$", sub_ids[i], fixed = T)){
+    next
+  }
+  
+  temp_file1 <- read_xlsx(paste0("../AccData/", sub_ids[i], "_1.xlsx")) %>%
+    slice(1:17) %>%
+    select(-starts_with("Order")) %>%
+    rename(correct = 8)
+  
+  temp_file2 <- read_xlsx(paste0("../AccData/", sub_ids[i], "_2.xlsx")) %>%
+    slice(1:17) %>%
+     select(-starts_with("Order")) %>%
+    rename(correct = 8)
+  
+  new_temp <- temp_file1 %>%
+    bind_cols(temp_file2$correct) %>%
+    rename(Correct_1 = correct, Correct_2 = "...9") %>%
+    mutate(AnswerRT = TimeToBeginInput - TimeToReadQuestion)
+
+
+  all_data <- all_data %>%
+    bind_rows(new_temp)
+  
+}
+
+all_data <- all_data %>%
+  rename(readRT = TimeToReadQuestion, totalRT = TimeToBeginInput)
+
+#read in trialtype key (I created this from an early version of the previous paper)
+trial_type_key <- read.csv("../trial_type_key.csv", stringsAsFactors = F)
+
+all_data <- all_data %>%
+  mutate(TrialType = trial_type_key$TrialType[match(TrialName, trial_type_key$TrialName)]) %>%
+  mutate(TrialType = paste0("Type",TrialType))
+
+
+# remove temporary dataframes to keep workspace cleaner as we go forward
+rm(new_temp)
+rm(temp_file1)
+rm(temp_file2)
+rm(trial_type_key)
+```
+
+## Basic checks
+
+Just a sanity check of all the data. Summary of number of subjects in
+each of the 3 condition types.
+
+```{r}
+
+#how many participants per condition
+all_data %>%
+  group_by(ParticipantId, Condition) %>%
+  summarize(ntrials = n()) %>%
+  group_by(Condition) %>%
+  summarize(nsubs = n()) %>%
+  summary()
+
+#why is the balance so off?
+
+
+```
+
+## Remove outliers based on RT
+
+Removing outliers, resulting in data frame named `all_data_no_outliers`.
+
+1.  All trials where the `AnswerRT` is less than 2 seconds are removed
+    first, which assumes these reactions were too fast so were done
+    without an actual considered response.
+2.  All trials where the `AnswerRT` is 3 standard deviations different
+    from the mean are removed next.
+
+Table shows summary of mean and standard deviation of answer RT by each
+of the trial question types, as well as the 3 standard deviation upper
+and lower bound of the reaction time.
+
+Displayed histogram is a sanity check of the number of trials each
+participant in all of the data have done. Most participants should do 16
+trials. Less than that are from dropped data for outliers.
+
+```{r}
+
+#removing on trial-by-trial basis
+
+
+#remove answerRTs below 2000ms first
+all_data_remove <- all_data %>%
+  filter(AnswerRT >= 2000)
+dim(all_data)[1]
+dim(all_data_remove)[1]
+#drops 7 trials
+
+# also remove AnswerRT that are more than 3 standard deviations away from
+# the mean
+all_data_no_outliers <- all_data_remove %>%
+  group_by(TrialName) %>%
+  filter((!(abs(AnswerRT - mean(AnswerRT)) > 3.0*sd(AnswerRT))))
+dim(all_data_no_outliers)[1]
+#drops 47 more trials
+
+
+rt_data_summary <- all_data_no_outliers %>%
+  group_by(TrialName) %>%
+  summarize(meanAnswerRT = mean(AnswerRT, na.rm = T),
+            sdAnswerRT = sd(AnswerRT, na.rm = T),
+            LB = meanAnswerRT - 3*sdAnswerRT,
+            UB = meanAnswerRT + 3*sdAnswerRT)
+summary(rt_data_summary)
+rm(rt_data_summary)
+
+
+all_data_no_outliers %>%
+  group_by(ParticipantId) %>%
+  summarize(ntrials = n()) %>%
+  with(hist(ntrials, breaks = 0:17))
+
+rm(all_data_remove)
+##maybe consider replacing outliers with means instead of removing them?
+
+```
+
+## Extract Only One Type of Chart
+
+Create a dataframe from the data with no outliers that contains only
+XChartQ1 through XChartQ4 trials for the following analysis.
+
+We replace the `all_data_no_outliers` dataframe with one containing only
+the selected TrialName question type here, so past this point we are
+analyzing only this particular TrialName type.
+
+We show the table again of the mean RT for this question type. The table
+should match the one done with all of the data, but we should only have
+the particular question trial name type now in the data.
+
+We also again plot the histogram of the number of trials. Participants
+should have seen 4 of each particular question type, but after removing
+outliers some only have 3, 2 or 1 remaining.
+
+```{r}
+all_data_no_outliers <- all_data_no_outliers %>%
+  filter(grepl("BarChartQ[0-9]", TrialName))
+
+rt_data_summary <- all_data_no_outliers %>%
+  group_by(TrialName) %>%
+  summarize(meanAnswerRT = mean(AnswerRT, na.rm = T),
+            sdAnswerRT = sd(AnswerRT, na.rm = T),
+            LB = meanAnswerRT - 3*sdAnswerRT,
+            UB = meanAnswerRT + 3*sdAnswerRT)
+summary(rt_data_summary)
+rm(rt_data_summary)
+
+
+all_data_no_outliers %>%
+  group_by(ParticipantId) %>%
+  summarize(ntrials = n()) %>%
+  with(hist(ntrials, breaks = 0:4))
+```
+
+```{r}
+#compare answer times 
+
+trial_type_means <- all_data_no_outliers %>%
+  group_by(ParticipantId, Condition, TrialType) %>%
+  summarize(mean_answerRT = mean(AnswerRT), n = n())
+
+# first, make .csv files in wide format to double check in statview
+answer_rt <- trial_type_means %>%
+  select(ParticipantId, Condition, TrialType, mean_answerRT) %>%
+  pivot_wider(names_from = TrialType, values_from = mean_answerRT)
+
+# fill in na values with mean for type1, type2 and type3 RT
+# the following is supposed to work, but we get NaN from calculation of mean here, not sure why...
+#read_rt_type_wider_clean <- read_rt_type_wider %>% mutate(across(Type1, ~replace_na(., mean(., na.rm=TRUE))))
+answer_rt <- answer_rt %>% replace_na(list(Type1 = mean(answer_rt$Type1, na.rm=TRUE)))
+answer_rt <- answer_rt %>% replace_na(list(Type2 = mean(answer_rt$Type2, na.rm=TRUE)))
+answer_rt <- answer_rt %>% replace_na(list(Type3 = mean(answer_rt$Type3, na.rm=TRUE)))
+
+
+answer_rt_summary <- answer_rt %>%
+  group_by(Condition) %>%
+  summarize(meanType1 = mean(Type1, na.rm = T),
+            meanType2 = mean(Type2, na.rm = T),
+            meanType3 = mean(Type3, na.rm=T))
+kable(answer_rt_summary)
+rm(answer_rt_summary)
+
+#rm(trial_type_means)
+```
+
+
+### Alternative Analysis using glmm TMB package
+
+The following analysis is for the heterogenous group condition analysis.  See
+[]().
+
+The following determines if a more complex model is justified.
+
+```{r}
+
+model_glmm_hom = glmmTMB(mean_answerRT ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ 1, REML = FALSE)
+model_glmm_hetero = glmmTMB(mean_answerRT ~ Condition * TrialType + (1 | ParticipantId),
+                            data=trial_type_means, family = Gamma(link="log"),
+                            dispformula = ~ Condition, REML = FALSE)
+
+
+anova(model_glmm_hom, model_glmm_hetero)
+```
+
+### Try overall effect reporting
+
+```{r}
+fixed_effects_anova <- Anova(model_glmm_hom, type="III")
+kable(fixed_effects_anova)
+#summary(fixed_effects_anova, level=0.95)
+```
+
+### EMM on Condition and Interaction
+
+If the glmm analysis is not significant, just use the homogeneous model.  Otherwise report on the more
+complex heterogeneous model?
+
+```{r}
+emm_main_condition <- emmeans(model_glmm_hom,
+                           specs = ~ Condition,
+                           type = "response")
+
+condition_results <- pairs(emm_main_condition)
+
+
+summary(condition_results, level=0.95)
+confint(condition_results, level=0.95)
+#kable(condition_results)
+```
+
+
+
+```{r}
+emm_interaction <- emmeans(model_glmm_hom,
+                           specs = ~ Condition * TrialType,
+                           type = "response")
+
+simple_effects_results <- pairs(emm_interaction, by = "TrialType")
+
+
+summary(simple_effects_results, level=0.95)
+confint(simple_effects_results, level=0.95)
+#kable(simple_effects_results)
+```
+
+### EMM by VR, VR Monitor, VR Monitor Stereo
+
+```{r}
+emm_main_condition <- emmeans(model_glmm_hom, 
+                              specs = ~ Condition, 
+                              type = "response")
+summary(emm_main_condition, level=0.95)
+confint(emm_main_condition, level=0.95)
+```
+
+
+```{r}
+contrast_coefficients <- c(-1, 0.5, 0.5)
+
+# Create a named list for the contrast matrix
+contrast_matrix <- list(
+    VR_vs_Monitors_Collapsed = contrast_coefficients
+)
+
+comparison_results <- contrast(emm_main_condition, 
+                               method = contrast_matrix)
+summary(comparison_results, level = 0.95)
+confint(comparison_results, level=0.95)
+```
+
+Try explicitly naming the coefficients to remove all ambuugity
+
+```{r}
+comparison_results <- contrast(
+  emm_main_condition,
+  method = list(
+    VR_vs_Monitors_Collapsed = c('VR' = -1, 'VR Monitor' = 0.5, 'VR Monitor Stereo' = 0.5)
+  )
+)
+
+summary(comparison_results, infer = TRUE)
+confint(comparison_results, level = 0.95)
+```
+
+```{r}
+contrast_coefficients <- c(-0.5, 1, -0.5)
+
+# Create a named list for the contrast matrix
+contrast_matrix <- list(
+    VRMonitor_vs_Others_Collapsed = contrast_coefficients
+)
+
+comparison_results <- contrast(emm_main_condition, 
+                               method = contrast_matrix)
+summary(comparison_results, level = 0.95)
+confint(comparison_results, level=0.95)
+```
+
+Try explicitly naming the coefficients to remove all ambuugity
+
+```{r}
+comparison_results <- contrast(
+  emm_main_condition,
+  method = list(
+    VRMonitor_vs_others_collapsed = c('VR' = -0.5, 'VR Monitor' = 1, 'VR Monitor Stereo' = -0.5)
+  )
+)
+
+summary(comparison_results, infer = TRUE)
+confint(comparison_results, level = 0.95)
+```
