@@ -313,19 +313,6 @@ confint(emm_main_condition, level=0.95)
 ```
 
 
-```{r}
-contrast_coefficients <- c(-1, 0.5, 0.5)
-
-# Create a named list for the contrast matrix
-contrast_matrix <- list(
-    VR_vs_Monitors_Collapsed = contrast_coefficients
-)
-
-comparison_results <- contrast(emm_main_condition, 
-                               method = contrast_matrix)
-summary(comparison_results, level = 0.95)
-confint(comparison_results, level=0.95)
-```
 
 Try explicitly naming the coefficients to remove all ambuugity
 
@@ -333,7 +320,7 @@ Try explicitly naming the coefficients to remove all ambuugity
 comparison_results <- contrast(
   emm_main_condition,
   method = list(
-    VR_vs_Monitors_Collapsed = c('VR' = -1, 'VR Monitor' = 0.5, 'VR Monitor Stereo' = 0.5)
+    VR_vs_Monitors_Collapsed = c('VR' = 1, 'VR Monitor' = -0.5, 'VR Monitor Stereo' = -0.5)
   )
 )
 
@@ -341,19 +328,7 @@ summary(comparison_results, infer = TRUE)
 confint(comparison_results, level = 0.95)
 ```
 
-```{r}
-contrast_coefficients <- c(-0.5, 1, -0.5)
 
-# Create a named list for the contrast matrix
-contrast_matrix <- list(
-    VRMonitor_vs_Others_Collapsed = contrast_coefficients
-)
-
-comparison_results <- contrast(emm_main_condition, 
-                               method = contrast_matrix)
-summary(comparison_results, level = 0.95)
-confint(comparison_results, level=0.95)
-```
 
 Try explicitly naming the coefficients to remove all ambuugity
 
