@@ -248,8 +248,11 @@ read_rt <- read_rt %>% replace_na(list(Type3 = mean(read_rt$Type3, na.rm=TRUE)))
 read_rt_summary <- read_rt %>%
   group_by(Condition) %>%
   summarize(meanType1 = mean(Type1, na.rm = T),
+            sdType1 = sd(Type1, na.rm = T),
             meanType2 = mean(Type2, na.rm = T),
-            meanType3 = mean(Type3, na.rm=T))
+            sdType2 = sd(Type2, na.rm = T),
+            meanType3 = mean(Type3, na.rm=T),
+            sdType3 = sd(Type3, na.rm = T))
 kable(read_rt_summary)
 rm(read_rt_summary)
 
@@ -620,7 +623,8 @@ emm_main_condition <- emmeans(model_glmm_hom,
 condition_results <- pairs(emm_main_condition)
 
 
-kable(condition_results)
+summary(condition_results, level=0.95)
+#kable(condition_results)
 ```
 
 ```{r}
@@ -631,9 +635,45 @@ emm_interaction <- emmeans(model_glmm_hom,
 simple_effects_results <- pairs(emm_interaction, by = "TrialType")
 
 
-kable(simple_effects_results)
+summary(simple_effects_results, level=0.95)
+#kable(simple_effects_results)
 ```
 
+### EMM
+
+```{r}
+emm_main_condition <- emmeans(model_glmm_hom, 
+                              specs = ~ Condition, 
+                              type = "response")
+summary(emm_main_condition, level=0.95)
+```
+
+```{r}
+contrast_coefficients <- c(1, -0.5, -0.5)
+
+# Create a named list for the contrast matrix
+contrast_matrix <- list(
+    VR_vs_Monitors_Collapsed = contrast_coefficients
+)
+
+comparison_results <- contrast(emm_main_condition, 
+                               method = contrast_matrix)
+summary(comparison_results, level = 0.95)
+```
+
+```{r}
+contrast_coefficients <- c(-0.5, 1, -0.5)
+
+# Create a named list for the contrast matrix
+contrast_matrix <- list(
+    VRMonitor_vs_Others_Collapsed = contrast_coefficients
+)
+
+comparison_results <- contrast(emm_main_condition, 
+                               method = contrast_matrix)
+summary(comparison_results, level = 0.95)
+
+```
 
 ## Compare Accuracy
 
