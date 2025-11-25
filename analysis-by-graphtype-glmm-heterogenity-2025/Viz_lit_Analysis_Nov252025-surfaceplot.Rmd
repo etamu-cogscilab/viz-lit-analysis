@@ -433,3 +433,37 @@ model_clmm_binary <- clmm(Correct_Binary_Factor ~ Condition * TrialType + (1 | P
 summary(model_clmm_binary)
 
 ```
+
+
+### Three Categories Collapse
+
+```{r}
+# Collapse to 3 categories: Incorrect (0), Partial (0.25-0.75), Correct (1)
+all_data_no_outliers <- all_data_no_outliers %>%
+  mutate(Correct_3Cat = case_when(
+    Correct_Avg == 0 ~ "Incorrect",
+    Correct_Avg > 0 & Correct_Avg < 1 ~ "Partial",
+    Correct_Avg == 1 ~ "Correct"
+  ),
+  Correct_3Cat_Factor = factor(Correct_3Cat,
+                               levels = c("Incorrect", "Partial", "Correct"),
+                               ordered = TRUE))
+
+# Check distribution
+table(all_data_no_outliers$Correct_3Cat_Factor)
+table(all_data_no_outliers$Correct_3Cat_Factor, 
+      all_data_no_outliers$Condition)
+
+# Important: Check if "Partial" category has enough observations
+# Rule of thumb: at least 10-15 per cell for stable estimates
+addmargins(table(all_data_no_outliers$Correct_3Cat_Factor, 
+                 all_data_no_outliers$Condition))
+
+# Fit 3-category ordinal model
+model_clmm_3cat <- clmm(Correct_3Cat_Factor ~ Condition * TrialType + (1 | ParticipantId),
+                        data = all_data_no_outliers,
+                        link = "logit")
+
+summary(model_clmm_3cat)
+```
+
